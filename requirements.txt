@@ -1,5 +1,12 @@
+# Main requirements file for Railway deployment
+# Use this for Railway instead of requirements_sse.txt
+
 # MCP Server Dependencies
 mcp>=1.0.0
+
+# FastAPI and SSE
+fastapi>=0.104.0
+uvicorn>=0.24.0
 
 # Web scraping and HTTP
 requests>=2.31.0
@@ -28,4 +35,3 @@ structlog>=23.0.0
 # Development and testing
 pytest>=7.0.0
 pytest-asyncio>=0.21.0
-
