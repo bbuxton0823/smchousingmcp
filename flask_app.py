@@ -373,40 +373,8 @@ Last updated: {datetime.now().isoformat()}
 # Create server instance
 mcp_server = FixedSMCHousingMCPServer()
 
-@app.route('/', methods=['GET'])
-def root():
-    """Root endpoint with server information."""
-    return jsonify({
-        "name": "SMC Housing MCP Server",
-        "version": "1.0.0",
-        "description": "San Mateo County Housing MCP Server - Fixed Version",
-        "status": "healthy",
-        "protocol": "MCP over HTTP (JSON-RPC 2.0)",
-        "endpoints": {
-            "/mcp": "Main MCP JSON-RPC endpoint (POST)",
-            "/health": "Health check endpoint (GET)",
-            "/tools": "Debug: List available tools (GET)",
-            "/initialize": "MCP initialize endpoint (POST)",
-            "/tools/call": "MCP tool call endpoint (POST)",
-            "/resources/list": "MCP resources list endpoint (GET/POST)",
-            "/resources/read": "MCP resources read endpoint (POST)"
-        },
-        "server_info": mcp_server.server_info
-    })
-
-@app.route('/health', methods=['GET'])
-def health():
-    """Health check endpoint."""
-    return jsonify({
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "server_info": mcp_server.server_info,
-        "version": "1.0.0"
-    })
-
-@app.route('/mcp', methods=['POST'])
-def mcp_endpoint():
-    """Main MCP JSON-RPC endpoint."""
+def mcp_endpoint_logic():
+    """Shared MCP JSON-RPC endpoint logic."""
     try:
         if not request.is_json:
             return jsonify({
@@ -440,30 +408,87 @@ def mcp_endpoint():
             }
         }), 500
 
-@app.route('/tools', methods=['GET'])
-def tools_endpoint():
-    """Debug endpoint to list available tools (fixed version)."""
-    try:
-        tools_request = {
-            "jsonrpc": "2.0",
-            "method": "tools/list",
-            "params": {},
-            "id": 1
-        }
-        
-        response = mcp_server.handle_request(tools_request)
-        
-        # Return the properly formatted response
-        return jsonify(response)
-            
-    except Exception as e:
+@app.route('/', methods=['GET', 'POST'])
+def root():
+    """Root endpoint - handle both GET (info) and POST (MCP requests)."""
+    if request.method == 'GET':
+        # Return server information for GET requests
         return jsonify({
-            "jsonrpc": "2.0",
-            "error": {
-                "code": -32603,
-                "message": f"Failed to extract MCP server tools: {str(e)}"
+            "name": "SMC Housing MCP Server",
+            "version": "1.0.0", 
+            "description": "San Mateo County Housing MCP Server - Fixed Version",
+            "status": "healthy",
+            "protocol": "MCP over HTTP (JSON-RPC 2.0)",
+            "capabilities": {
+                "tools": {},
+                "resources": {}
+            },
+            "serverInfo": mcp_server.server_info,
+            "endpoints": {
+                "/": "Main MCP endpoint (supports both GET info and POST JSON-RPC)",
+                "/mcp": "Alternative MCP JSON-RPC endpoint",
+                "/health": "Health check endpoint",
+                "/tools": "Debug: List available tools"
             }
-        }), 500
+        })
+    else:
+        # Handle POST requests as MCP JSON-RPC
+        return mcp_endpoint_logic()
+
+@app.route('/health', methods=['GET'])
+def health():
+    """Health check endpoint."""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "server_info": mcp_server.server_info,
+        "version": "1.0.0"
+    })
+
+@app.route('/mcp', methods=['POST'])
+def mcp_endpoint():
+    """Alternative MCP JSON-RPC endpoint."""
+    return mcp_endpoint_logic()
+
+@app.route('/tools', methods=['GET', 'POST'])
+def tools_endpoint():
+    """Tools endpoint - supports both GET (simple list) and POST (MCP protocol)."""
+    if request.method == 'GET':
+        # Simple GET request - return tools directly
+        return jsonify({
+            "tools": mcp_server.tools,
+            "count": len(mcp_server.tools),
+            "server": mcp_server.server_info
+        })
+    else:
+        # POST request - handle as MCP JSON-RPC
+        try:
+            # If it's a direct tools/list request
+            if request.is_json:
+                mcp_request = request.get_json()
+                if mcp_request and mcp_request.get("method") == "tools/list":
+                    response = mcp_server.handle_request(mcp_request)
+                    return jsonify(response)
+            
+            # Default tools/list request
+            tools_request = {
+                "jsonrpc": "2.0",
+                "method": "tools/list",
+                "params": {},
+                "id": 1
+            }
+            
+            response = mcp_server.handle_request(tools_request)
+            return jsonify(response)
+                
+        except Exception as e:
+            return jsonify({
+                "jsonrpc": "2.0",
+                "error": {
+                    "code": -32603,
+                    "message": f"Failed to extract MCP server tools: {str(e)}"
+                }
+            }), 500
 
 @app.route('/initialize', methods=['POST'])
 def initialize_endpoint():
