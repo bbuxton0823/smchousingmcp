@@ -1,0 +1,31 @@
+# MCP Server Dependencies
+mcp>=1.0.0
+
+# Web scraping and HTTP
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+selenium>=4.15.0
+aiohttp>=3.9.0
+
+# PDF processing
+pdfplumber>=0.9.0
+PyPDF2>=3.0.0
+
+# Data processing and validation
+pydantic>=2.0.0
+pandas>=2.0.0
+
+# Async and utilities
+asyncio-mqtt>=0.16.0
+python-dotenv>=1.0.0
+
+# Caching (optional)
+redis>=5.0.0
+
+# Logging and monitoring
+structlog>=23.0.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+
