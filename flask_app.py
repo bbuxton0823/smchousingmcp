@@ -121,7 +121,7 @@ class FixedSMCHousingMCPServer:
             }
         ]
     
-    async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming MCP requests with proper JSON-RPC format."""
         try:
             method = request.get("method")
@@ -133,7 +133,7 @@ class FixedSMCHousingMCPServer:
             elif method == "tools/list":
                 return self._handle_tools_list(request_id)
             elif method == "tools/call":
-                return await self._handle_tool_call(params, request_id)
+                return self._handle_tool_call(params, request_id)
             elif method == "resources/list":
                 return self._handle_resources_list(request_id)
             elif method == "resources/read":
@@ -169,7 +169,7 @@ class FixedSMCHousingMCPServer:
             }
         }
     
-    async def _handle_tool_call(self, params: Dict[str, Any], request_id: Any) -> Dict[str, Any]:
+    def _handle_tool_call(self, params: Dict[str, Any], request_id: Any) -> Dict[str, Any]:
         """Handle tool call request."""
         tool_name = params.get("name")
         arguments = params.get("arguments", {})
@@ -183,7 +183,7 @@ class FixedSMCHousingMCPServer:
             return self._error_response(f"Unknown tool: {tool_name}", request_id)
         
         try:
-            result = await self._execute_tool(tool_name, arguments)
+            result = self._execute_tool(tool_name, arguments)
             
             return {
                 "jsonrpc": "2.0",
@@ -201,7 +201,7 @@ class FixedSMCHousingMCPServer:
         except Exception as e:
             return self._error_response(f"Tool execution failed: {str(e)}", request_id)
     
-    async def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+    def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
         """Execute a specific tool with mock data."""
         if tool_name == "get_housing_statistics":
             return {
@@ -405,7 +405,7 @@ def health():
     })
 
 @app.route('/mcp', methods=['POST'])
-async def mcp_endpoint():
+def mcp_endpoint():
     """Main MCP JSON-RPC endpoint."""
     try:
         if not request.is_json:
@@ -428,7 +428,7 @@ async def mcp_endpoint():
                 }
             }), 400
         
-        response = await mcp_server.handle_request(mcp_request)
+        response = mcp_server.handle_request(mcp_request)
         return jsonify(response)
         
     except Exception as e:
@@ -441,7 +441,7 @@ async def mcp_endpoint():
         }), 500
 
 @app.route('/tools', methods=['GET'])
-async def tools_endpoint():
+def tools_endpoint():
     """Debug endpoint to list available tools (fixed version)."""
     try:
         tools_request = {
@@ -451,7 +451,7 @@ async def tools_endpoint():
             "id": 1
         }
         
-        response = await mcp_server.handle_request(tools_request)
+        response = mcp_server.handle_request(tools_request)
         
         # Return the properly formatted response
         return jsonify(response)
@@ -466,7 +466,7 @@ async def tools_endpoint():
         }), 500
 
 @app.route('/initialize', methods=['POST'])
-async def initialize_endpoint():
+def initialize_endpoint():
     """MCP initialize endpoint."""
     try:
         init_request = {
@@ -476,7 +476,7 @@ async def initialize_endpoint():
             "id": 1
         }
         
-        response = await mcp_server.handle_request(init_request)
+        response = mcp_server.handle_request(init_request)
         return jsonify(response)
         
     except Exception as e:
@@ -489,7 +489,7 @@ async def initialize_endpoint():
         }), 500
 
 @app.route('/tools/call', methods=['POST'])
-async def tool_call_endpoint():
+def tool_call_endpoint():
     """MCP tool call endpoint."""
     try:
         tool_request = {
@@ -499,7 +499,7 @@ async def tool_call_endpoint():
             "id": 1
         }
         
-        response = await mcp_server.handle_request(tool_request)
+        response = mcp_server.handle_request(tool_request)
         return jsonify(response)
         
     except Exception as e:
@@ -512,7 +512,7 @@ async def tool_call_endpoint():
         }), 500
 
 @app.route('/resources/list', methods=['GET', 'POST'])
-async def resources_list_endpoint():
+def resources_list_endpoint():
     """MCP resources list endpoint."""
     try:
         resources_request = {
@@ -522,7 +522,7 @@ async def resources_list_endpoint():
             "id": 1
         }
         
-        response = await mcp_server.handle_request(resources_request)
+        response = mcp_server.handle_request(resources_request)
         return jsonify(response)
         
     except Exception as e:
@@ -535,7 +535,7 @@ async def resources_list_endpoint():
         }), 500
 
 @app.route('/resources/read', methods=['POST'])
-async def resources_read_endpoint():
+def resources_read_endpoint():
     """MCP resources read endpoint."""
     try:
         read_request = {
@@ -545,7 +545,7 @@ async def resources_read_endpoint():
             "id": 1
         }
         
-        response = await mcp_server.handle_request(read_request)
+        response = mcp_server.handle_request(read_request)
         return jsonify(response)
         
     except Exception as e:
